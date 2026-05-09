@@ -73,7 +73,7 @@ MULTI_CONDITION_WORDS = {" or ", " and ", " first", " versus ", " vs "}
 # One-touch barrier patterns: "Will BTC reach/hit $X in May" or "by December 31, 2026"
 # These resolve YES as soon as price touches the barrier at any point before expiry.
 _BARRIER_ASSET_RE = r"(?P<asset>bitcoin|btc|ethereum|ether|eth)"
-_BARRIER_TOUCH_RE = r"(?P<direction>reach|reaches|hit|hits)"
+_BARRIER_TOUCH_RE = r"(?P<direction>reach|reaches|hit|hits|touch|touches)"
 _BARRIER_PRICE_RE = r"\$?\s*(?P<price>[\d,]+(?:\.[\d]+)?)\s*(?P<suffix>[kKmM])?"
 
 # "Will Bitcoin reach $150,000 in May?" / "Will Bitcoin hit $150k by December 31, 2026?"
@@ -247,9 +247,7 @@ def _is_multi_condition(title: str) -> bool:
 
 def _regex_match(market: Market) -> CryptoMarketMatch | None:
     title = market.title
-    if _is_barrier_option(title):
-        return None
-    if _is_multi_condition(title):
+    if _should_skip_digital_match(title):
         return None
 
     for pattern in PATTERNS:
@@ -288,6 +286,14 @@ def _regex_match(market: Market) -> CryptoMarketMatch | None:
     return None
 
 
+def _should_skip_digital_match(title: str) -> bool:
+    return (
+        _is_barrier_option(title)
+        or _is_multi_condition(title)
+        or bool(_BARRIER_PATTERN.search(title))
+    )
+
+
 try:
     import dspy
 
@@ -311,6 +317,7 @@ try:
 
     _HAS_DSPY = True
 except ImportError:
+    dspy = None  # type: ignore[assignment]
     _HAS_DSPY = False
 
 
@@ -449,6 +456,8 @@ class CryptoMarketMatcher:
 
     async def match(self, market: Market) -> CryptoMarketMatch | None:
         if not _has_crypto_keywords(market.title):
+            return None
+        if _should_skip_digital_match(market.title):
             return None
 
         result = _regex_match(market)
