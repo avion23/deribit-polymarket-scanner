@@ -222,7 +222,7 @@ class DeribitScanner:
             print("--- DIGITAL OPTIONS ---")
             header = (
                 f"{'EDGE':>7} | {'ACTION':>8} | {'COST':>5} | {'MO%':>5} | {'APY':>6} | {'DAYS':>4} | "
-                f"{'PM YES':>6} | {'DERIBIT':>7} | {'ASSET':>5} | {'STRIKE':>10} | "
+                f"{'PM YES':>6} | {'DERIBIT':>7} | {'ASSET':>5} | {'DIR':>3} | {'STRIKE':>10} | "
                 f"{'EXPIRY':>10} | {'IV':>6} | {'LIQ':>8}"
             )
             print(header)
@@ -232,13 +232,16 @@ class DeribitScanner:
                 strike_str = f"${r.strike:,.0f}"
                 iv_str = f"{r.interpolated_iv * 100:.1f}%"
                 liq_str = f"${r.liquidity / 1000:.0f}K" if r.liquidity >= 1000 else f"${r.liquidity:.0f}"
-                mo_str = f"{r.monthly_return * 100:.1f}%"
-                apy_str = f"{r.annualized_yield * 100:.0f}%"
+                mo_pct = r.monthly_return * 100
+                mo_str = ">999%" if mo_pct > 999 else f"{mo_pct:.1f}%"
+                apy_pct = r.annualized_yield * 100
+                apy_str = ">9999%" if apy_pct > 9999 else f"{apy_pct:.0f}%"
                 cost = r.no_price if r.action == "BUY_NO" else r.polymarket_yes_price
                 extrap = "~" if r.extrapolated else " "
+                dir_str = "abv" if r.direction == "above" else "blw"
                 print(
                     f"{edge_str:>7} | {r.action:>8} | {cost:>5.2f} | {mo_str:>5} | {apy_str:>6} | {r.days_to_expiry:>4} | "
-                    f"{r.polymarket_yes_price:>6.3f} | {r.implied_probability:>7.3f} | {r.asset:>5} | {strike_str:>10} | "
+                    f"{r.polymarket_yes_price:>6.3f} | {r.implied_probability:>7.3f} | {r.asset:>5} | {dir_str:>3} | {strike_str:>10} | "
                     f"{r.resolution_date.strftime('%Y-%m-%d'):>10} | {iv_str:>5}{extrap} | {liq_str:>8}"
                 )
             print()
@@ -259,8 +262,10 @@ class DeribitScanner:
                 edge_str = f"{r.edge_percent:+.1f}%"
                 range_str = f"${r.lower_strike:,.0f}-${r.upper_strike:,.0f}"
                 liq_str = f"${r.liquidity / 1000:.0f}K" if r.liquidity >= 1000 else f"${r.liquidity:.0f}"
-                mo_str = f"{r.monthly_return * 100:.1f}%"
-                apy_str = f"{r.annualized_yield * 100:.0f}%"
+                mo_pct = r.monthly_return * 100
+                mo_str = ">999%" if mo_pct > 999 else f"{mo_pct:.1f}%"
+                apy_pct = r.annualized_yield * 100
+                apy_str = ">9999%" if apy_pct > 9999 else f"{apy_pct:.0f}%"
                 cost = r.no_price if r.action == "BUY_NO" else r.polymarket_yes_price
                 extrap = "~" if r.extrapolated else " "
                 print(
@@ -287,8 +292,10 @@ class DeribitScanner:
                 barrier_str = f"${r.barrier:,.0f}"
                 iv_str = f"{r.interpolated_iv * 100:.1f}%"
                 liq_str = f"${r.liquidity / 1000:.0f}K" if r.liquidity >= 1000 else f"${r.liquidity:.0f}"
-                mo_str = f"{r.monthly_return * 100:.1f}%"
-                apy_str = f"{r.annualized_yield * 100:.0f}%"
+                mo_pct = r.monthly_return * 100
+                mo_str = ">999%" if mo_pct > 999 else f"{mo_pct:.1f}%"
+                apy_pct = r.annualized_yield * 100
+                apy_str = ">9999%" if apy_pct > 9999 else f"{apy_pct:.0f}%"
                 cost = r.no_price if r.action == "BUY_NO" else r.polymarket_yes_price
                 extrap = "~" if r.extrapolated else " "
                 print(

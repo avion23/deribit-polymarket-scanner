@@ -692,7 +692,6 @@ class PolymarketAPI:
         logger.info(
             f"Events: fetched={total_events}, crypto_events={crypto_events}, markets_extracted={len(all_markets)}"
         )
-        print(f"  Events fetched: {total_events} | Crypto events: {crypto_events} | Markets extracted: {len(all_markets)}")
         return all_markets
 
     async def get_market(self, market_id: str) -> Optional[Dict[str, Any]]:
