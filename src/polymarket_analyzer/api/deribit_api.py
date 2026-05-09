@@ -62,14 +62,17 @@ class DeribitAPI:
             return data.get("result", data)
         except httpx.HTTPStatusError as e:
             self.circuit_breaker.record_failure()
+            logger.warning("Deribit HTTP %d for %s", e.response.status_code, method)
             raise APIError(f"Deribit HTTP {e.response.status_code}", status_code=e.response.status_code) from e
         except httpx.RequestError as e:
             self.circuit_breaker.record_failure()
+            logger.warning("Deribit request failed for %s: %s", method, e)
             raise APIError(f"Deribit request failed: {e}") from e
 
     async def get_spot_price(self, currency: str) -> SpotPrice:
         index_name = f"{currency.lower()}_usd"
         result = await self._request("get_index_price", {"index_name": index_name})
+        logger.info("%s spot: $%.0f", currency.upper(), result["index_price"])
         return SpotPrice(
             currency=currency.upper(),
             price=result["index_price"],
@@ -115,6 +118,12 @@ class DeribitAPI:
                 best_bid_price=item.get("bid_price"),
                 best_ask_price=item.get("ask_price"),
             ))
+        logger.info(
+            "%s: %d instruments, %d with valid IV",
+            currency.upper(),
+            len(result),
+            len(tickers),
+        )
         return tickers
 
     async def close(self):

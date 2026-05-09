@@ -1,9 +1,19 @@
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from ..models import Market
-from .bs_digital import VolSurface, digital_call_price, digital_put_price, one_touch_down, one_touch_up, range_binary_price
+from .bs_digital import (
+    VolSurface,
+    digital_call_price,
+    digital_put_price,
+    one_touch_down,
+    one_touch_up,
+    range_binary_price,
+)
 from .market_matcher import BarrierMarketMatch, CryptoMarketMatch, RangeMarketMatch
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -294,6 +304,9 @@ class DeribitEdgeCalculator:
             result = self.compute_barrier(match, market, surface)
             if result is not None:
                 results.append(result)
+        skipped = len(matches) - len(results)
+        if skipped:
+            logger.debug("Barrier: %d computed, %d skipped (no surface/IV/expired)", len(results), skipped)
         return sorted(results, key=lambda r: abs(r.edge), reverse=True)
 
     def compute_range(
@@ -379,6 +392,9 @@ class DeribitEdgeCalculator:
             result = self.compute_range(match, market, surface)
             if result is not None:
                 results.append(result)
+        skipped = len(matches) - len(results)
+        if skipped:
+            logger.debug("Range: %d computed, %d skipped (no surface/IV/expired)", len(results), skipped)
         return sorted(results, key=lambda r: abs(r.edge), reverse=True)
 
     def compute_batch(
@@ -394,4 +410,7 @@ class DeribitEdgeCalculator:
             result = self.compute(match, market, surface)
             if result is not None:
                 results.append(result)
+        skipped = len(matches) - len(results)
+        if skipped:
+            logger.debug("Digital: %d computed, %d skipped (no surface/IV/expired)", len(results), skipped)
         return sorted(results, key=lambda r: abs(r.edge), reverse=True)

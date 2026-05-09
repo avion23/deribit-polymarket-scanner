@@ -330,6 +330,14 @@ async def main():
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
     )
+    noisy_loggers = ["httpx", "httpcore", "hpack", "h2", "h11", "asyncio"]
+    if not args.verbose:
+        noisy_loggers.extend([
+            "polymarket_analyzer.api.polymarket_api",
+            "polymarket_analyzer.api.deribit_api",
+        ])
+    for noisy in noisy_loggers:
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
     scanner = DeribitScanner(
         min_edge_pct=args.min_edge,

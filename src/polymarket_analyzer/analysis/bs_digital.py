@@ -1,6 +1,9 @@
+import logging
 import math
 from dataclasses import dataclass
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 def normal_cdf(x: float) -> float:
@@ -78,6 +81,14 @@ class VolSurface:
             self._by_expiry.setdefault(p.time_to_expiry, []).append(p)
         for t in self._by_expiry:
             self._by_expiry[t].sort(key=lambda p: p.strike)
+        total_points = sum(len(pts) for pts in self._by_expiry.values())
+        logger.debug(
+            "VolSurface %s: spot=$%.0f, %d expiries, %d strike-expiry points",
+            currency,
+            spot,
+            len(self._expiries),
+            total_points,
+        )
 
     def get_forward(self, time_to_expiry: float) -> float:
         if not self._forwards:
@@ -149,8 +160,18 @@ class VolSurface:
             return points[0].iv
 
         if strike <= points[0].strike:
+            logger.debug(
+                "Strike %.0f below grid min %.0f, using flat extrapolation",
+                strike,
+                points[0].strike,
+            )
             return points[0].iv
         if strike >= points[-1].strike:
+            logger.debug(
+                "Strike %.0f above grid max %.0f, using flat extrapolation",
+                strike,
+                points[-1].strike,
+            )
             return points[-1].iv
 
         for i in range(len(points) - 1):
