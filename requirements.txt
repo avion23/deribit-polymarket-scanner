@@ -1,0 +1,8 @@
+httpx
+python-dateutil
+pydantic
+pydantic-settings
+pytest
+pytest-asyncio
+web3
+py-clob-client

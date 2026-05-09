@@ -25,17 +25,20 @@ For each market the scanner reports:
 
 ```bash
 # Install dependencies
-pip install httpx python-dateutil
-pip install dspy-ai   # optional — enables LLM-based market parsing
+python3 -m pip install -r requirements.txt
+python3 -m pip install dspy-ai   # optional — enables LLM-based market parsing
 
 # Run with defaults (min edge 3%, min liquidity $10K)
-python scripts/deribit_scanner.py
+python3 scripts/deribit_scanner.py
 
 # Custom thresholds
-python scripts/deribit_scanner.py --min-edge 5 --min-liquidity 10000
+python3 scripts/deribit_scanner.py --min-edge 5 --min-liquidity 10000
 
 # Disable LLM fallback, run continuously every 10 minutes
-python scripts/deribit_scanner.py --no-llm --loop --interval 600
+python3 scripts/deribit_scanner.py --no-llm --loop --interval 600
+
+# Run tests
+python3 -m pytest
 ```
 
 ### Flags
@@ -66,4 +69,4 @@ Both APIs are public and require no authentication.
 - **Settlement basis risk**: Polymarket uses its own oracle; Deribit settles on its BTC/ETH index. These can diverge at expiry, especially around exchange outages or low-liquidity windows.
 - **Vol surface staleness**: Deribit vol quotes are fetched at scan time. Fast-moving markets can make the snapshot stale within minutes.
 
-No positions are opened, modified, or closed. The scanner is read-only.
+No positions are opened, modified, or closed. The scanner is read-only. Authenticated trading helpers respect `DRY_RUN=true` by returning simulated order/cancel results without touching the CLOB client.

@@ -275,12 +275,16 @@ class PolymarketAPI:
     def _init_trading_clients(self):
         """Initialize CLOB client and Web3 for trading operations."""
         try:
-            import os
+            clob_host = settings.polymarket_host or "https://clob.polymarket.com"
+
+            if settings.dry_run:
+                self.clob = ClobClient(clob_host) if ClobClient else None
+                self.trading_enabled = False
+                logger.info("Dry run enabled; initialized read-only CLOB client")
+                return
 
             from eth_account import Account
             from web3 import Web3
-
-            clob_host = settings.polymarket_host or "https://clob.polymarket.com"
 
             if settings.polymarket_private_key:
                 # Validate and normalize private key
@@ -1224,16 +1228,29 @@ class PolymarketAPI:
         Raises:
             APIError: If trading not enabled or order fails
         """
-        if not self.trading_enabled or not self.clob:
-            raise APIError("Trading not enabled - no credentials configured")
-
-        # Validate inputs
         if not (0.01 <= price <= 0.99):
             raise APIError(f"Invalid price: {price}. Must be between 0.01 and 0.99")
         if size <= 0:
             raise APIError(f"Invalid size: {size}. Must be > 0")
         if side.upper() not in ("BUY", "SELL"):
             raise APIError(f"Invalid side: {side}. Must be BUY or SELL")
+
+        if settings.dry_run:
+            logger.info(
+                f"Dry run order: token={_redact_address(token_id)}, side={side.upper()}, "
+                f"price={price:.3f}, size=${size:.2f}"
+            )
+            return {
+                "dry_run": True,
+                "orderID": "dry-run",
+                "token_id": token_id,
+                "price": price,
+                "size": size,
+                "side": side.upper(),
+            }
+
+        if not self.trading_enabled or not self.clob:
+            raise APIError("Trading not enabled - no credentials configured")
 
         try:
             from py_clob_client.clob_types import OrderArgs
@@ -1274,6 +1291,10 @@ class PolymarketAPI:
         Raises:
             APIError: If trading not enabled or cancellation fails
         """
+        if settings.dry_run:
+            logger.info(f"Dry run cancel order: {order_id[:16]}...")
+            return True
+
         if not self.trading_enabled or not self.clob:
             raise APIError("Trading not enabled - no credentials configured")
 
